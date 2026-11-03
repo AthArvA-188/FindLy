@@ -1,0 +1,28 @@
+# FindLy Backend Requirements
+# File indexing, semantic search, and vector database
+
+# Web Framework
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+
+# Database & Caching
+redis==5.0.1
+qdrant-client==1.15.1
+
+# File Processing
+PyMuPDF==1.23.8            # PDF text extraction (fitz)
+python-multipart==0.0.6    # For file uploads in FastAPI
+
+# Embeddings & ML
+torch==2.5.1                     #2.1.0
+transformers==4.46.0       # CLIP tokenizer and models
+sentence-transformers==3.3.1  # SOTA text embeddings
+Pillow==10.1.0            # Image processing
+numpy==1.26.4
+
+# HTTP & Utilities
+requests==2.31.0
+
+# Logging & Development
+python-dotenv==1.0.0

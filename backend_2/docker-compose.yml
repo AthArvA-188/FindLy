@@ -1,0 +1,168 @@
+services:
+  # Frontend - Vite dev server (HMR)
+  frontend:
+    image: node:20-alpine
+    container_name: findly-frontend
+    working_dir: /frontend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_BACKEND_TARGET=http://app:8000
+    volumes:
+      - ../frontend:/frontend
+      - frontend_node_modules:/frontend/node_modules
+    networks:
+      - findly-network
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # Redis - In-memory cache and queue storage
+  redis:
+    image: redis:7-alpine
+    container_name: findly-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - findly-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Qdrant - Vector database for semantic search
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: findly-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - findly-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Embedding API - CLIP model server for generating embeddings
+  embedding-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.embedding
+    container_name: findly-embedding-api
+    ports:
+      - "5001:5000"
+    networks:
+      - findly-network
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+    depends_on:
+      - redis
+    volumes:
+      - type: bind
+        source: "${HOST_USERS_PATH:?Set HOST_USERS_PATH in backend_2/.env}"
+        target: /host/home
+
+  # Redis Queue Indexer - Processes files from queue and stores in Qdrant
+  queue-indexer:
+    build:
+      context: .
+      dockerfile: Dockerfile.indexer
+    container_name: findly-queue-indexer
+    networks:
+      - findly-network
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - QDRANT_HOST=qdrant
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      embedding-api:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - type: bind
+        source: "${HOST_USERS_PATH:?Set HOST_USERS_PATH in backend_2/.env}"
+        target: /host/home
+
+  # File Watcher - Monitors indexed files for modifications and re-enqueues them
+  file-watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.watcher
+    container_name: findly-file-watcher
+    networks:
+      - findly-network
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - type: bind
+        source: "${HOST_USERS_PATH:?Set HOST_USERS_PATH in backend_2/.env}"
+        target: /host/home
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: findly-app
+    ports:
+      - "8000:8000"
+    networks:
+      - findly-network
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - QDRANT_HOST=qdrant
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      embedding-api:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - type: bind
+        source: "${HOST_USERS_PATH:?Set HOST_USERS_PATH in backend_2/.env}"
+        target: /host/home
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/qdrant/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  frontend_node_modules:
+    driver: local
+  redis_data:
+    driver: local
+  qdrant_data:
+    driver: local
+
+networks:
+  findly-network:
+    driver: bridge

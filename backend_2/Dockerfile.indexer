@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy queue indexer code
+COPY redis_queue_indexer.py config.py search_helper.py qdrant_helper.py file_handler.py ./
+
+# Set Python to run unbuffered
+ENV PYTHONUNBUFFERED=1
+
+# Run the queue indexer (stays running)
+CMD ["python", "-u", "redis_queue_indexer.py"]

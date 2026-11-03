@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.env.local
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose.yml
+
+# Tests
+.pytest_cache
+.coverage
+htmlcov/
+
+# Data (large files)
+*.faiss
+*.db
+*.json
+
+# Node (frontend)
+node_modules/

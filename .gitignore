@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Python
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Local engine data (user-specific indexed files & vectors)
+findly_engine/data/
+
+# Stray root lock file
+/package-lock.json
+
+# Testing
+coverage/
+*/coverage/
+*.coverage
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Generated local search artifacts
+*.faiss
+*.db
+*.db-wal
+*.db-shm
+indexed_files.json
+pc_data/

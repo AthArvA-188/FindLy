@@ -1,0 +1,6 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.watcher.txt .
+RUN pip install --no-cache-dir -r requirements.watcher.txt
+COPY config.py file_handler.py file_watcher.py ./
+CMD ["python", "file_watcher.py"]

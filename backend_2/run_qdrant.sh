@@ -1,0 +1,1 @@
+docker run -d -p 6333:6333 -v ~/findly-storage:/qdrant/storage qdrant/qdrant

@@ -1,0 +1,2 @@
+This is a sample document for Findly testing.
+It mentions a unique token: unicorn-xyz for test searches.
